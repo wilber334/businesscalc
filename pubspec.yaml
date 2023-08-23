@@ -52,13 +52,13 @@ dev_dependencies:
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 flutter_native_splash:
-  color: "#a100ff"
+  color: "#0044ff"
   image: assets/calc.png
   # fullscreen: true
   android_12:
-    color: "#a100ff"
+    color: "#0044ff"
     image: assets/calc.png
-    icon_background_color: "#a100ff"
+    icon_background_color: "#0044ff"
 
 # The following section is specific to Flutter packages.
 flutter:
