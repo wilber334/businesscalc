@@ -67,12 +67,12 @@ class _CompanyState extends State<Company> {
                   children: [
                     Text(
                       companyData['investment'].toString(),
-                      textScaleFactor: 1.5,
+                      textScaler: TextScaler.linear(1.5),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(
                       companyData['workingCapital'].toString(),
-                      textScaleFactor: 1.5,
+                      textScaler: TextScaler.linear(1.5),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ],
@@ -94,11 +94,11 @@ class _CompanyState extends State<Company> {
                         children: [
                           const Text(
                             'Ventas',
-                            textScaleFactor: 1.5,
+                            textScaler: TextScaler.linear(1.5),
                           ),
                           Text(
                             companyData['sales'].toString(),
-                            textScaleFactor: 1.5,
+                            textScaler: TextScaler.linear(1.5),
                           ),
                         ],
                       ),
@@ -107,11 +107,11 @@ class _CompanyState extends State<Company> {
                         children: [
                           const Text(
                             '- Compras',
-                            textScaleFactor: 1.5,
+                            textScaler: TextScaler.linear(1.5),
                           ),
                           Text(
                             companyData['workingCapital'].toString(),
-                            textScaleFactor: 1.5,
+                            textScaler: TextScaler.linear(1.5),
                           ),
                         ],
                       ),
@@ -123,13 +123,13 @@ class _CompanyState extends State<Company> {
                         children: [
                           const Text(
                             'Utilidad Bruta',
-                            textScaleFactor: 1.5,
+                            textScaler: TextScaler.linear(1.5),
                           ),
                           Text(
                             (companyData['sales'] -
                                     companyData['workingCapital'])
                                 .toString(),
-                            textScaleFactor: 1.5,
+                            textScaler: TextScaler.linear(1.5),
                           ),
                         ],
                       ),
@@ -138,11 +138,11 @@ class _CompanyState extends State<Company> {
                         children: [
                           const Text(
                             '- Costos Fijos',
-                            textScaleFactor: 1.5,
+                            textScaler: TextScaler.linear(1.5),
                           ),
                           Text(
                             companyData['fixedCost'].toString(),
-                            textScaleFactor: 1.5,
+                            textScaler: TextScaler.linear(1.5),
                           ),
                         ],
                       ),
@@ -154,7 +154,7 @@ class _CompanyState extends State<Company> {
                         children: [
                           Text(
                             'Utilidad Neta',
-                            textScaleFactor: 1.5,
+                            textScaler: TextScaler.linear(1.5),
                             style: TextStyle(
                                 color: companyData['utilityMonth'] >= 0
                                     ? Colors.blue
@@ -162,7 +162,7 @@ class _CompanyState extends State<Company> {
                           ),
                           Text(
                             companyData['utilityMonth'].toString(),
-                            textScaleFactor: 1.5,
+                            textScaler: TextScaler.linear(1.5),
                             style: TextStyle(
                                 color: companyData['utilityMonth'] >= 0
                                     ? Colors.blue

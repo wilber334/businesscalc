@@ -19,24 +19,24 @@ class _OptionsCardState extends State<OptionsCard> {
                 width: double.infinity,
                 child: ElevatedButton(
                     style: const ButtonStyle(
-                      backgroundColor: MaterialStatePropertyAll(Colors.red),
-                      foregroundColor: MaterialStatePropertyAll(Colors.white),
+                      backgroundColor: WidgetStatePropertyAll(Colors.red),
+                      foregroundColor: WidgetStatePropertyAll(Colors.white),
                     ),
                     onPressed: () {
                       widget.onDeletePressed!();
                       Navigator.of(context).pop();
                     },
                     child: const Text('Borrar'))),
-            SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                    style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStatePropertyAll(Colors.blue[800]),
-                        foregroundColor:
-                            const MaterialStatePropertyAll(Colors.white)),
-                    onPressed: () {},
-                    child: const Text('Actualizar'))),
+            // SizedBox(
+            //     width: double.infinity,
+            //     child: ElevatedButton(
+            //         style: ButtonStyle(
+            //             backgroundColor:
+            //                 WidgetStatePropertyAll(Colors.blue[800]),
+            //             foregroundColor:
+            //                 const WidgetStatePropertyAll(Colors.white)),
+            //         onPressed: () {},
+            //         child: const Text('Actualizar'))),
           ],
         ),
       ),

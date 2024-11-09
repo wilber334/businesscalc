@@ -3,7 +3,7 @@ import 'package:businesscalc/homecard.dart';
 import 'package:flutter/material.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+  const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -66,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
 class CompanyFormDialog extends StatelessWidget {
   final VoidCallback updateState;
 
-  CompanyFormDialog({Key? key, required this.updateState}) : super(key: key);
+  CompanyFormDialog({super.key, required this.updateState});
   final TextEditingController _companyController = TextEditingController();
 
   void guardarNuevaEmpresa(BuildContext context) async {
