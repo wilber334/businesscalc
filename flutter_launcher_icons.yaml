@@ -1,0 +1,18 @@
+# flutter pub run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/calc.png"
+
+  android: true
+  # image_path_android: "assets/icon/icon.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  # adaptive_icon_background: "assets/icon/background.png"
+  # adaptive_icon_foreground: "assets/icon/foreground.png"
+  # adaptive_icon_monochrome: "assets/icon/monochrome.png"
+  adaptive_icon_background: "#FFFFFF" # Fondo blanco para icono adaptativo
+  adaptive_icon_foreground: "assets/calc.png" # Imagen del icono en el primer plano
+
+
+
+
+ 
+
