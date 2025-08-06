@@ -1,9 +1,11 @@
 import 'package:businesscalc/database.dart';
 import 'package:businesscalc/views/card/salecard.dart';
+import 'package:businesscalc/views/sell_form_dialog.dart';
 import 'package:flutter/material.dart';
 
 class MySell extends StatefulWidget {
   final Map<String, dynamic> business;
+
   const MySell({super.key, required this.business});
 
   @override
@@ -11,250 +13,289 @@ class MySell extends StatefulWidget {
 }
 
 class _MySellState extends State<MySell> {
-  double sumaTotal = 0;
-  updateTotalAmonut() async {
-    sumaTotal =
-        await DatabaseHelper.getTotalAmount('sales', widget.business['id']);
-    setState(() {});
-  }
+  double _totalAmount = 0;
+  List<Map<String, dynamic>> _sales = [];
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    updateTotalAmonut();
+    _loadData();
+  }
+
+  /// Carga los datos iniciales
+  Future<void> _loadData() async {
+    await _updateData();
+  }
+
+  /// Actualiza tanto el total como la lista de ventas
+  Future<void> _updateData() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final results = await Future.wait([
+        DatabaseHelper.getTotalAmount('sales', widget.business['id']),
+        DatabaseHelper.getSalesByCompany(widget.business['id']),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _totalAmount = results[0] as double;
+          _sales = results[1] as List<Map<String, dynamic>>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Error al cargar datos: $e';
+        });
+        _showErrorSnackBar('Error al actualizar datos: $e');
+      }
+    }
+  }
+
+  /// Maneja la eliminación de una venta
+  Future<void> _handleDeleteSale(Map<String, dynamic> sale) async {
+    final confirmed = await _showDeleteConfirmationDialog();
+    if (!confirmed) return;
+
+    try {
+      await _deleteSaleTransaction(sale);
+      await _updateData();
+
+      if (mounted) {
+        _showSuccessSnackBar('Venta eliminada exitosamente');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnackBar('Error al eliminar venta: $e');
+      }
+    }
+  }
+
+  /// Elimina una venta y actualiza las tablas relacionadas
+  Future<void> _deleteSaleTransaction(Map<String, dynamic> sale) async {
+    final saleId = sale['id'];
+    final companyId = widget.business['id'];
+    final totalSell = sale['totalSell'] ?? 0;
+    final totalBuy = sale['totalBuy'] ?? 0;
+    final margin = sale['margen'] ?? 0;
+
+    // Realizar todas las operaciones de base de datos
+    await Future.wait([
+      DatabaseHelper.deleteItems('sales', saleId),
+      DatabaseHelper.updateSumaTotal('sales', companyId, -totalSell),
+      DatabaseHelper.updateSumaTotal('workingCapital', companyId, -totalBuy),
+      DatabaseHelper.updateSumaTotal('utilityMonth', companyId, -margin),
+    ]);
+  }
+
+  /// Muestra el diálogo de confirmación para eliminar
+  Future<bool> _showDeleteConfirmationDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar eliminación'),
+        content: const Text('¿Estás seguro de que deseas eliminar esta venta?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  /// Maneja la apertura del diálogo de nueva venta
+  Future<void> _handleAddSale() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => SellFormDialog(
+        isEdit: false,
+        companyId: widget.business['id'],
+        onRefreshPressed: _updateData,
+      ),
+    );
+
+    if (result == true) {
+      await _updateData();
+    }
+  }
+
+  /// Muestra un SnackBar de error
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  /// Muestra un SnackBar de éxito
+  void _showSuccessSnackBar(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [const Text('Venta Mes'), Text(sumaTotal.toString())],
-            ),
-            const Row(
-              children: [
-                Text(
-                  'Producto',
-                  style: TextStyle(fontSize: 12.0, fontStyle: FontStyle.italic),
-                ),
-                SizedBox(
-                  width: 70.0,
-                ),
-                Text(
-                  'PC',
-                  style: TextStyle(fontSize: 12.0, fontStyle: FontStyle.italic),
-                ),
-                SizedBox(
-                  width: 30.0,
-                ),
-                Text(
-                  'PV',
-                  style: TextStyle(fontSize: 12.0, fontStyle: FontStyle.italic),
-                ),
-                SizedBox(
-                  width: 30.0,
-                ),
-                Text(
-                  'Monto',
-                  style: TextStyle(fontSize: 12.0, fontStyle: FontStyle.italic),
-                )
-              ],
-            )
-          ],
-        ),
-      ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: DatabaseHelper.getSalesByCompany(widget.business['id']),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
-          } else if (snapshot.hasError) {
-            return const Text('Error fetching data from database');
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-                child: Text(
-              'No Hay Ventas',
-              style: TextStyle(fontSize: 20.0),
-            ));
-          } else {
-            final sales = snapshot.data!;
-            return ListView.builder(
-              itemCount: sales.length,
-              itemBuilder: (context, index) {
-                final item = sales[index];
-                return SaleCard(
-                    sales: item,
-                    onDeletePressed: () async {
-                      await DatabaseHelper.deleteItems('sales', item['id']);
-                      await DatabaseHelper.updateSumaTotal(
-                          'sales', widget.business['id'], -item['totalSell']);
-                      await DatabaseHelper.updateSumaTotal('workingCapital',
-                          widget.business['id'], -item['totalBuy']);
-                      await DatabaseHelper.updateSumaTotal('utilityMonth',
-                          widget.business['id'], -item['margen']);
-                      updateTotalAmonut();
-                    });
-              },
-            );
-          }
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => SellFormDialog(
-                companyId: widget.business['id'],
-                updateState: () {
-                  Future.delayed(
-                      const Duration(milliseconds: 100), updateTotalAmonut);
-                }),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
+      appBar: _buildAppBar(),
+      body: _buildBody(),
+      floatingActionButton: _buildFloatingActionButton(),
     );
   }
-}
 
-class SellFormDialog extends StatefulWidget {
-  final int companyId;
-  final VoidCallback updateState;
-  const SellFormDialog(
-      {super.key, required this.companyId, required this.updateState});
-
-  @override
-  State<SellFormDialog> createState() => _SellFormDialogState();
-}
-
-class _SellFormDialogState extends State<SellFormDialog> {
-  final GlobalKey<FormState> _sellFormKey = GlobalKey<FormState>();
-  final TextEditingController _productNameController = TextEditingController();
-  final TextEditingController _priceBuyController = TextEditingController();
-  final TextEditingController _priceSellController = TextEditingController();
-  final TextEditingController _quantitySellController = TextEditingController();
-
-  String _rotation = 'Mensual';
-  void guardarDatos(BuildContext context) async {
-    String product = _productNameController.text;
-    double priceBuy = double.tryParse(_priceBuyController.text) ?? 0.0;
-    double priceSell = double.tryParse(_priceSellController.text) ?? 0.0;
-    int quantitySell = int.tryParse(_quantitySellController.text) ?? 0;
-    if (_rotation == 'Diario') {
-      quantitySell = quantitySell * 30;
-    }
-    double totalSell = priceSell * quantitySell;
-    double totalBuy = priceBuy * quantitySell;
-    double margen = totalSell - totalBuy;
-    await DatabaseHelper.insertSales(widget.companyId, quantitySell, product,
-        priceBuy, priceSell, totalSell, totalBuy, margen);
-    await DatabaseHelper.updateSumaTotal('sales', widget.companyId, totalSell);
-    await DatabaseHelper.updateSumaTotal(
-        'workingCapital', widget.companyId, totalBuy);
-    await DatabaseHelper.updateSumaTotal(
-        'utilityMonth', widget.companyId, margen);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+  /// Construye el AppBar con el total y los headers
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: Column(
         children: [
-          const Text('Venta'),
-          DropdownButton(
-            dropdownColor: Colors.blue,
-            borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-            value: _rotation,
-            items: ['Mensual', 'Diario'].map((String value) {
-              return DropdownMenuItem(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            onChanged: (newValue) {
-              setState(() {
-                _rotation = newValue!;
-              });
-            },
-          ),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _sellFormKey,
-          child: Column(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              TextFormField(
-                keyboardType: TextInputType.name,
-                controller: _productNameController,
-                decoration: const InputDecoration(labelText: 'Producto'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Por favor, ingresa Producto';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                keyboardType: TextInputType.number,
-                controller: _priceBuyController,
-                decoration: const InputDecoration(labelText: 'Precio Compra'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Por favor, ingresa el Precio de Compra';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                controller: _priceSellController,
-                decoration: const InputDecoration(labelText: 'Precio Venta'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Por favor, ingresa el Precio de Venta';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                keyboardType: TextInputType.number,
-                controller: _quantitySellController,
-                decoration: InputDecoration(labelText: 'Cantidad $_rotation'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Por favor, ingresa la Cantidad $_rotation de venta';
-                  }
-                  return null;
-                },
+              const Text('Venta Mes'),
+              Text(
+                _totalAmount.toStringAsFixed(2),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 4),
+          const Row(
+            children: [
+              Text('Producto', style: _headerTextStyle),
+              SizedBox(width: 70.0),
+              Text('PC', style: _headerTextStyle),
+              SizedBox(width: 30.0),
+              Text('PV', style: _headerTextStyle),
+              SizedBox(width: 30.0),
+              Text('Monto', style: _headerTextStyle),
+            ],
+          )
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_sellFormKey.currentState!.validate()) {
-              guardarDatos(context);
-              widget.updateState();
-              Navigator.of(context).pop();
-            }
-          },
-          child: const Text('Ok'),
-        ),
-      ],
     );
   }
+
+  /// Construye el cuerpo principal de la pantalla
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return _buildErrorView();
+    }
+
+    if (_sales.isEmpty) {
+      return _buildEmptyView();
+    }
+
+    return _buildSalesList();
+  }
+
+  /// Construye la vista de error
+  Widget _buildErrorView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const SizedBox(height: 16),
+          Text(_errorMessage ?? 'Error desconocido'),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: _updateData,
+            child: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Construye la vista cuando no hay ventas
+  Widget _buildEmptyView() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.shopping_cart_outlined, size: 48, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'No hay ventas registradas',
+            style: TextStyle(fontSize: 18.0, color: Colors.grey),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Presiona + para agregar una venta',
+            style: TextStyle(fontSize: 14.0, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Construye la lista de ventas
+  Widget _buildSalesList() {
+    return RefreshIndicator(
+      onRefresh: _updateData,
+      child: ListView.builder(
+        itemCount: _sales.length,
+        itemBuilder: (context, index) {
+          final sale = _sales[index];
+          return SaleCard(
+            sales: sale,
+            onDeletePressed: () => _handleDeleteSale(sale),
+            onRefreshPressed: _updateData,
+          );
+        },
+      ),
+    );
+  }
+
+  /// Construye el botón flotante
+  Widget _buildFloatingActionButton() {
+    return FloatingActionButton(
+      onPressed: _isLoading ? null : _handleAddSale,
+      child: _isLoading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.add),
+    );
+  }
+
+  static const TextStyle _headerTextStyle = TextStyle(
+    fontSize: 12.0,
+    fontStyle: FontStyle.italic,
+  );
 }

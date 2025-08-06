@@ -1,9 +1,13 @@
 import 'package:businesscalc/database.dart';
 import 'package:businesscalc/homecard.dart';
+import 'package:businesscalc/my_drawer.dart';
 import 'package:flutter/material.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+  final VoidCallback onThemeToggle;
+  final ThemeMode currentThemeMode;
+  const MyHomePage(
+      {super.key, required this.onThemeToggle, required this.currentThemeMode});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -20,6 +24,10 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: const Text('Business Calc'),
       ),
+      drawer: MyDrawer(
+        onThemeToggle: widget.onThemeToggle,
+        currentThemeMode: widget.currentThemeMode,
+      ),
       body: RefreshIndicator(
         onRefresh: _refreshData,
         child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -31,9 +39,17 @@ class _MyHomePageState extends State<MyHomePage> {
               return const Text('Error fetching data from database');
             } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const Center(
-                  child: Text(
-                'No Hay Empresas',
-                style: TextStyle(fontSize: 20.0),
+                  child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.trending_up_outlined,
+                      size: 100.0, color: Colors.blueGrey),
+                  Text(
+                    'No Hay Proyectos\n Crea tu primer proyecto\n tocando el botón +',
+                    style: TextStyle(fontSize: 20.0),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ));
             } else {
               final companies = snapshot.data!;
@@ -46,6 +62,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     onDeletePressed: () async {
                       await DatabaseHelper.deleteCompany(company['id']);
                       setState(() {});
+                    },
+                    onUpdated: () {
+                      setState(() {}); // Refresca la pantalla cuando se edita
                     },
                   );
                 },
@@ -81,12 +100,12 @@ class CompanyFormDialog extends StatelessWidget {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Agregar Empresa'),
+            title: const Text('Agregar Proyecto'),
             content: TextField(
               keyboardType: TextInputType.text,
               controller: _companyController,
               decoration:
-                  const InputDecoration(labelText: 'Nombre de la Empresa'),
+                  const InputDecoration(labelText: 'Nombre del Proyecto'),
             ),
             actions: [
               TextButton(

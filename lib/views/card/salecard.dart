@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 class SaleCard extends StatelessWidget {
   final Map<String, dynamic> sales;
   final Function()? onDeletePressed;
+  final Function()? onRefreshPressed;
   const SaleCard(
-      {super.key, required this.sales, required this.onDeletePressed});
+      {super.key,
+      required this.sales,
+      required this.onDeletePressed,
+      required this.onRefreshPressed});
   String truncateWords(String input, int wordLimit) {
     List<String> words = input.split(' ');
     if (words.length <= wordLimit) {
@@ -55,8 +59,12 @@ class SaleCard extends StatelessWidget {
                   onPressed: () {
                     showDialog(
                       context: context,
-                      builder: (context) =>
-                          OptionsCard(onDeletePressed: onDeletePressed),
+                      builder: (context) => OptionsCard(
+                        opcion: 'ventas',
+                        data: sales,
+                        onDeletePressed: onDeletePressed,
+                        onRefreshPressed: onRefreshPressed,
+                      ),
                     );
                   },
                   icon: const Icon(Icons.more_vert_rounded))

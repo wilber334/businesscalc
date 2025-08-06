@@ -2,9 +2,16 @@ import 'package:businesscalc/views/card/optionscard.dart';
 import 'package:flutter/material.dart';
 
 class CIcard extends StatelessWidget {
+  final String opcion;
   final Map<String, dynamic> items;
   final Function()? onDeletePressed;
-  const CIcard({super.key, required this.items, this.onDeletePressed});
+  final Function()? onRefreshPressed;
+  const CIcard(
+      {super.key,
+      required this.items,
+      required this.opcion,
+      this.onDeletePressed,
+      this.onRefreshPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +35,11 @@ class CIcard extends StatelessWidget {
                   onPressed: () {
                     showDialog(
                         context: context,
-                        builder: (context) =>
-                            OptionsCard(onDeletePressed: onDeletePressed));
+                        builder: (context) => OptionsCard(
+                            opcion: opcion,
+                            data: items,
+                            onDeletePressed: onDeletePressed,
+                            onRefreshPressed: onRefreshPressed));
                   },
                   icon: const Icon(Icons.more_vert_rounded))
             ],
@@ -39,55 +49,3 @@ class CIcard extends StatelessWidget {
     );
   }
 }
-
-// class CardDialog extends StatefulWidget {
-//   final Function()? onDeletePressed;
-//   const CardDialog({super.key, required this.onDeletePressed});
-
-//   @override
-//   State<CardDialog> createState() => _CardDialogState();
-// }
-
-// class _CardDialogState extends State<CardDialog> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return AlertDialog(
-//       content: IntrinsicHeight(
-//         child: Column(
-//           children: [
-//             SizedBox(
-//                 width: double.infinity,
-//                 child: ElevatedButton(
-//                     style: const ButtonStyle(
-//                       backgroundColor: MaterialStatePropertyAll(Colors.red),
-//                       foregroundColor: MaterialStatePropertyAll(Colors.white),
-//                     ),
-//                     onPressed: () {
-//                       widget.onDeletePressed!();
-//                       Navigator.of(context).pop();
-//                     },
-//                     child: const Text('Borrar'))),
-//             SizedBox(
-//                 width: double.infinity,
-//                 child: ElevatedButton(
-//                     style: ButtonStyle(
-//                         backgroundColor:
-//                             MaterialStatePropertyAll(Colors.blue[800]),
-//                         foregroundColor:
-//                             const MaterialStatePropertyAll(Colors.white)),
-//                     onPressed: () {},
-//                     child: const Text('Actualizar'))),
-//           ],
-//         ),
-//       ),
-//       actions: [
-//         TextButton(
-//           onPressed: () {
-//             Navigator.of(context).pop();
-//           },
-//           child: const Text('Cancel'),
-//         ),
-//       ],
-//     );
-//   }
-// }
